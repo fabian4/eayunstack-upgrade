@@ -19,3 +19,4 @@
   roles:
     - trove
     - haproxy
+    - senlin
