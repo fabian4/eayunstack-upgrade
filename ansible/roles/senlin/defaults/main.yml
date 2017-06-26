@@ -1,0 +1,76 @@
+---
+project_name: senlin
+
+senlin_sys_uid: 970
+senlin_sys_gid: 970
+senlin_sys_homedir: "/var/lib/senlin"
+
+senlin_database_name: "senlin"
+
+senlin_services:
+  senlin-api:
+    container_name: senlin_api
+    image: "{{ senlin_api_image }}"
+    volumes:
+      - "{{ senlin_sys_homedir }}:{{ senlin_sys_homedir }}"
+      - "{{ eayunstack_config_base }}/{{ project_name }}:{{ senlin_config_diretory }}:ro"
+      - "{{ timezone_path }}:/etc/localtime:ro"
+      - "{{ eayunstack_log_base }}/{{ project_name }}:{{ senlin_log_directory }}"
+  senlin-engine:
+    container_name: senlin-engine
+    image: "{{ senlin_engine_image }}"
+    volumes:
+      - "{{ senlin_sys_homedir }}:{{ senlin_sys_homedir }}"
+      - "{{ eayunstack_config_base }}/{{ project_name }}:{{ senlin_config_diretory }}:ro"
+      - "{{ timezone_path }}:/etc/localtime:ro"
+      - "{{ eayunstack_log_base }}/{{ project_name }}:{{ senlin_log_directory }}"
+
+senlin_config_diretory: /etc/senlin
+senlin_config_files:
+  senlin.conf:
+    handlers:
+      - Restart senlin-api container
+      - Restart senlin-engine container
+
+senlin_haproxy_order: "301"
+
+senlin_managed_tenant: "senlin-managed-tenant"
+
+senlin_public_endpoint: "http://{{ public_vip }}:{{ senlin_api_port }}/v1.0/%(tenant_id)s"
+senlin_internal_endpoint: "http://{{ management_vip }}:{{ senlin_api_port }}/v1.0/%(tenant_id)s"
+senlin_admin_endpoint: "http://{{ management_vip }}:{{ senlin_api_port }}/v1.0/%(tenant_id)s"
+
+senlin_endpoints:
+  publicurl: "{{ senlin_public_endpoint }}"
+  internalurl: "{{ senlin_internal_endpoint }}"
+  adminurl: "{{ senlin_admin_endpoint }}"
+
+senlin_log_directory: "/var/log/{{ project_name }}"
+senlin_logging_debug: "True"
+
+trove_conf:
+  default:
+    max_accepted_volume_size: "500"
+    max_instances_per_tenant: "5"
+    max_volumes_per_tenant: "100"
+    max_backups_per_tenant: "5"
+    volume_time_out: "30"
+    http_get_rate: "200"
+    http_post_rate: "200"
+    http_put_rate: "200"
+    http_delete_rate: "200"
+    http_mgmt_post_rate: "200"
+    agent_heartbeat_time: "10"
+    agent_call_low_timeout: "5"
+    agent_call_high_timeout: "150"
+    reboot_time_out: "60"
+  mysql:
+    tcp_ports: "3306"
+
+senlin_api_image: "{{ docker_registry }}/{{ eayunstack_docker_prefix }}/senlin-api"
+senlin_engine_image: "{{ docker_registry }}/{{ eayunstack_docker_prefix }}/senlin-engine"
+senlin_db_sync_image: "{{ docker_registry }}/{{ eayunstack_docker_prefix }}/senlin-db-sync"
+
+senlin_logrotate_conf:
+  rotate: "4"
+  minsize: "30M"
